@@ -32,12 +32,36 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const jobsCollection = client.db('jobsphere').collection('jobs')
+    const applyJobsCollection = client.db('jobsphere').collection('appliedJobs')
 
        // get all documents for job page
        app.get('/jobs', async(req,res)=>{
         const result = await jobsCollection.find().toArray()
         res.send(result)
       })
+
+       // get single document for job details dynamic page
+       app.get('/job/:id', async(req, res)=>{
+         const id = req.params.id
+         const query = {_id: new ObjectId(id)}
+         const result = await jobsCollection.findOne(query)
+         res.send(result)
+       })
+
+
+        // save applied jobs data on database
+        app.post('/appliedJobs', async(req, res)=>{
+          const appliedJobsData = req.body
+          // console.log(appliedJobsData);
+          const result = await applyJobsCollection.insertOne(appliedJobsData)
+          res.send(result)
+        })
+
+
+
+
+
+
 
     
     await client.db("admin").command({ ping: 1 });
