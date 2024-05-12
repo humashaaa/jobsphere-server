@@ -57,6 +57,47 @@ async function run() {
           res.send(result)
         })
 
+        // save a job data on database
+        app.post('/job', async(req, res)=>{
+          const addJobData = req.body
+          console.log(addJobData);
+          const result = await jobsCollection.insertOne(addJobData)
+          res.send(result)
+        })
+
+        // get all jobs posted by a specific user
+        app.get('/jobs/:email', async(req, res)=>{
+          const email = req.params.email
+          const query = {'buyer.email': email}
+          const result = await jobsCollection.find(query).toArray()
+          res.send(result)
+        })
+
+        // update a job in db
+        app.put('/job/:id', async(req, res)=>{
+          const id = req.params.id
+          const jobData = req.body
+          const query = {_id: new ObjectId(id)}
+          const options = {upsert: true}
+          const updateDoc = {
+            $set : {
+              ...jobData,
+            }
+          }
+          const result = await jobsCollection.updateOne(query, updateDoc, options)
+          res.send(result)
+
+
+        })
+
+        // delete a job from db
+        app.delete('/job/:id', async(req, res)=>{
+          const id = req.params.id
+          const query = {_id: new ObjectId(id)}
+          const result = await jobsCollection.deleteOne(query)
+          res.send(result)
+        })
+
 
 
 
