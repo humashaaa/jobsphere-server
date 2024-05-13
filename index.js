@@ -11,7 +11,7 @@ const app = express()
 app.use(express.json())
 app.use(
   cors({
-      origin: ['http://localhost:5173', 'http://localhost:5173', 'https://enmmedia-19300.web.app'],
+      origin: ['http://localhost:5173', 'http://localhost:5174', 'https://enmmedia-19300.web.app'],
       credentials: true,
   }),
 )
@@ -95,6 +95,23 @@ async function run() {
           const id = req.params.id
           const query = {_id: new ObjectId(id)}
           const result = await jobsCollection.deleteOne(query)
+          res.send(result)
+        })
+
+
+         // get all applied jobs posted by a specific user
+         app.get('/appliedJobs/:email', async(req, res)=>{
+          const email = req.params.email
+          const query = { email}
+          const result = await applyJobsCollection.find(query).toArray()
+          res.send(result)
+        })
+
+         // get all applied jobs from db for job owner
+         app.get('/jobRequest/:email', async(req, res)=>{
+          const email = req.params.email
+          const query = {'buyer.email': email}
+          const result = await applyJobsCollection.find(query).toArray()
           res.send(result)
         })
 
