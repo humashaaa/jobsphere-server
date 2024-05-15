@@ -2,7 +2,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const express = require('express');
 const cors = require('cors');
-// const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 const app = express()
@@ -11,10 +12,11 @@ const app = express()
 app.use(express.json())
 app.use(
   cors({
-      origin: ['http://localhost:5173', 'http://localhost:5174', 'https://enmmedia-19300.web.app'],
+      origin: ['https://assignment-11-4768a.web.app', 'https://assignment-11-4768a.firebaseapp.com', 'http://localhost:5173'],
       credentials: true,
   }),
 )
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wal4hcq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -33,6 +35,22 @@ async function run() {
   try {
     const jobsCollection = client.db('jobsphere').collection('jobs')
     const applyJobsCollection = client.db('jobsphere').collection('appliedJobs')
+         
+    
+    // jwt generate
+    app.post('/jwt', async (req, res) => {
+      const email = req.body
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '365d',
+      })
+      res
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        })
+        .send({ success: true })
+    })
 
        // get all documents for job page
        app.get('/jobs', async(req,res)=>{
@@ -102,7 +120,11 @@ async function run() {
          // get all applied jobs posted by a specific user
          app.get('/appliedJobs/:email', async(req, res)=>{
           const email = req.params.email
-          const query = { email}
+          const filter = req.query.filter
+          let query = {}
+          if(filter) query={category:filter, email}
+          console.log(query);
+
           const result = await applyJobsCollection.find(query).toArray()
           res.send(result)
         })
@@ -110,9 +132,23 @@ async function run() {
          // get all applied jobs from db for job owner
          app.get('/jobRequest/:email', async(req, res)=>{
           const email = req.params.email
-          const query = {'buyer.email': email}
+          const query = { 'buyer.email':email}
+
           const result = await applyJobsCollection.find(query).toArray()
           res.send(result)
+        })
+
+        // update job request status
+        app.patch('/myJob/:id', async(req, res)=>{
+          const id = req.params.body
+          const status = req.body
+          const query = {_id: new ObjectId(id)}
+          const updateDoc = {
+            $set : status,
+          }
+          const result = await applyJobsCollection.updateOne(query, updateDoc)
+          res.send(result)
+
         })
 
 
